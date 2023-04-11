@@ -166,12 +166,12 @@ def predict(
         device (torch.device, optional): The computing device on which to predict.
             Defaults to cpu.
     """
-    preds = torch.tensor([])
+    preds = torch.tensor([]).to(device, non_blocking=True)
     batches = range(int(ceil(len(X / batch_size))))
     model.eval()
     with torch.inference_mode():
         for batch in batches:
             X_sub = X[batch*batch_size : min((batch+1)*batch_size, len(X))].to(device, non_blocking=True)
             preds_batch = model(X_sub)
-            preds = torch.cat([preds, preds_batch])
+            preds = torch.cat([preds, preds_batch]).to(device, non_blocking=True)
     return preds
