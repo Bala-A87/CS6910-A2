@@ -1,6 +1,7 @@
 import torch
 from torch import nn
 from typing import List, Tuple, Dict
+from math import ceil
 
 class ConvNet(nn.Module):
     """
@@ -147,3 +148,30 @@ def train(
     print(f'Training complete. Train loss: {history["train_loss"][-1]:.6f}, Train score: {history["train_score"][-1]:.4f}, Val loss: {history["val_loss"][-1]:.6f}, Val score: {history["val_score"][-1]:.4f}')
 
     return history
+
+def predict(
+    model: ConvNet,
+    X: torch.Tensor,
+    batch_size: int = 128,
+    device: torch.device = 'cpu'
+) -> torch.Tensor:
+    """
+    Predicts labels for given data using the given ConvNet.
+
+    Args:
+        model (ConvNet): The model to use for prediction.
+        X (torch.Tensor): The data for which to make the predictions.
+        batch_size (int, optional): The batch size to use while computing the predictions.
+            Defaults to 128.
+        device (torch.device, optional): The computing device on which to predict.
+            Defaults to cpu.
+    """
+    preds = torch.tensor([])
+    batches = range(int(ceil(len(X / batch_size))))
+    model.eval()
+    with torch.inference_mode():
+        for batch in batches:
+            X_sub = X[batch*batch_size : min((batch+1)*batch_size, len(X))].to(device, non_blocking=True)
+            preds_batch = model(X_sub)
+            preds = torch.cat([preds, preds_batch])
+    return preds
