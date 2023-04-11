@@ -16,6 +16,8 @@ device = 'cpu'
 def train_run(config=None):
     with wandb.init(config=config) as run:
         config = wandb.config
+        if config.filters == 256:
+            return
         run.name = f'{config.filters}_filters_{config.width}_width_{str(config.dropout)+"_dropout" if config.dropout is not None else ""}_{config.actn_conv}_{config.pool_size_final}_poolsize_{config.lr}_lr_{config.weight_decay}_wd{"_bnorm" if config.batch_norm else ""}{"_aug" if config.data_aug else ""}'
         if config.data_aug:
             dataset_total = ConcatDataset([dataset, dataset_aug])
@@ -27,7 +29,7 @@ def train_run(config=None):
             actn_conv = torch.nn.ReLU
         elif config.actn_conv == 'gelu':
             actn_conv = torch.nn.GELU
-        elif config.actn_conv == 'silu':
+        elif config.actn_conv == 'silu':    
             actn_conv = torch.nn.SiLU
         model = ConvNet(
             filters=[(config.filters, 3)]*5,
@@ -48,12 +50,11 @@ def train_run(config=None):
             optimizer=optimizer,
             metric=metric,
             epochs=config.epochs,
-            verbose=False,
+            verbose=True,
             device=device
         )
         for i in range(config.epochs):
             wandb.log({'epoch': history['epoch'][i], 'loss': history['train_loss'][i], 'accuracy': history['train_score'][i], 'val_loss': history['val_loss'][i], 'val_accuracy': history['val_score'][i]})
-    torch.cuda.empty_cache()
 
 
 
@@ -103,5 +104,6 @@ parameters = {
 }
 sweep_config['parameters'] = parameters
 
-sweep_id = wandb.sweep(sweep_config, project='CS6910-A2') 
+# sweep_id = wandb.sweep(sweep_config, project='CS6910-A2')
+sweep_id = '0ia2ycpw'
 wandb.agent(sweep_id, train_run, project='CS6910-A2')
