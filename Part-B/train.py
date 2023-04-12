@@ -68,7 +68,7 @@ if args.wandb_project is not None:
 
 if args.run_test:
     dataset_test = ImageFolder('../data/val/', transform=transforms)
-    full_dataloader = DataLoader(dataset, batch_size=len(dataset_test))
+    full_dataloader = DataLoader(dataset_test, batch_size=len(dataset_test))
     X_test, Y_test = next(iter(full_dataloader))
     Y_pred = predict(model, X_test, batch_size=args.batch_size, device=device)
     metric = CategoricalAccuracy()

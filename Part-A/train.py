@@ -109,7 +109,7 @@ if args.save_model:
 if args.run_test:
     dataset_test = ImageFolder('../data/val/', transform=transforms)
     # Get the entire test data
-    full_dataloader = DataLoader(dataset, batch_size=len(dataset_test))
+    full_dataloader = DataLoader(dataset_test, batch_size=len(dataset_test))
     X_test, Y_test = next(iter(full_dataloader))
     # then use predict to get the predictions
     Y_pred = predict(model, X_test, batch_size=args.batch_size, device=device)
