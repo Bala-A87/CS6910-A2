@@ -49,7 +49,7 @@ args_parser.add_argument('-save', '--save_model', action='store_true', help="Whe
 args = args_parser.parse_args()
 
 transforms = Compose([Resize((224, 224)), ToTensor()])
-transforms_aug = Compose([Resize((224, 224)), RandAugment(), ToTensor()])
+transforms_aug = Compose([Resize((224, 224)), RandAugment(), ToTensor()]) # with data_augmentation
 dataset = ImageFolder('../data/train/', transform=transforms)
 dataset_aug = ImageFolder('../data/train/', transform=transforms_aug)
 
@@ -67,6 +67,7 @@ train_dataloader, val_dataloader = DataLoader(train_dataset, batch_size=args.bat
 activation_conv = get_activation(args.activation_conv)
 activation_dense = get_activation(args.activation_dense)
 
+# Building the model
 model = ConvNet(
     filters=list(zip(args.filters, args.kernel_size)),
     width_dense=args.width,
@@ -77,10 +78,12 @@ model = ConvNet(
     pool_size_final=args.pool_size
 ).to(device, non_blocking=True)
 
+# Setting up requirements for optimization
 loss_fn = torch.nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(params=model.parameters(), lr=args.learning_rate, weight_decay=args.weight_decay)
 metric = CategoricalAccuracy()
 
+# Training the model 
 history = train(
     model=model,
     train_dataloader=train_dataloader,
@@ -93,12 +96,14 @@ history = train(
     device=device
 )
 
+# Logging training details on WandB if required
 if args.wandb_project is not None:
     with wandb.init(entity=args.wandb_entity, project=args.wandb_project) as run:
         run.name = f'{args.filters}_filters_{args.width}_width_{str(args.dropout)+"_dropout" if args.dropout is not None else ""}_{args.activation_conv}_{args.pool_size}_poolsize_{args.learning_rate}_lr_{args.weight_decay}_wd{"_bnorm" if args.batch_norm else ""}{"_aug" if args.data_aug else ""}'
         for i in range(args.epochs):
             wandb.log({'epoch': history['epoch'][i], 'loss': history['train_loss'][i], 'accuracy': history['train_score'][i], 'val_loss': history['val_loss'][i], 'val_accuracy': history['val_score'][i]})
 
+# Saving the model if required
 if args.save_model:
     save_dir = Path('./models/')
     if not save_dir.is_dir():
@@ -106,6 +111,7 @@ if args.save_model:
     save_file_name = f'./models/{args.filters}_filters_{args.width}_width_{str(args.dropout)+"_dropout" if args.dropout is not None else ""}_{args.activation_conv}_{args.pool_size}_poolsize_{args.learning_rate}_lr_{args.weight_decay}_wd{"_bnorm" if args.batch_norm else ""}{"_aug" if args.data_aug else ""}'
     torch.save(model.state_dict(), f=save_file_name)
 
+# Running the trained model on test data if required 
 if args.run_test:
     dataset_test = ImageFolder('../data/val/', transform=transforms)
     # Get the entire test data

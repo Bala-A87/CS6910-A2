@@ -38,9 +38,12 @@ dataset_total = ConcatDataset([dataset, dataset_aug]) if args.data_aug else data
 train_dataset, val_dataset = random_split(dataset_total, lengths=[0.8, 0.2])
 train_dataloader, val_dataloader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True), DataLoader(val_dataset, batch_size=args.batch_size, shuffle=True)
 
+# Load the pre-trained model with the default weights
 model = resnet50(weights=ResNet50_Weights.DEFAULT)
+# Freeze all the parameters as we don't want to learn the features from scratch
 for param in model.parameters():
     param.requires_grad_(False)
+# Modify output layer to match the number of classes and allow it to learn
 model.fc = torch.nn.Linear(model.fc.in_features, 10)
 model = model.to(device, non_blocking=True)
 
